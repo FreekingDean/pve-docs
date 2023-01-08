@@ -64,12 +64,12 @@ GEN_SCRIPTS=					\
 	gen-output-format-opts.pl
 
 API_VIEWER_FILES=							\
-	api-viewer/apidata.js						\
-	api-viewer/PVEAPI.js						\
+	api-viewer/apidata.js					\
+	api-viewer/PVEAPI.js					\
 	/usr/share/javascript/proxmox-widget-toolkit-dev/APIViewer.js
 
 API_VIEWER_SOURCES=				\
-	api-viewer/index.html			\
+	api-viewer/index.html		\
 	api-viewer/apidoc.js
 
 asciidoc-pve: asciidoc-pve.in link-refs.json
@@ -151,8 +151,13 @@ pve-admin-guide.epub: ${PVE_ADMIN_GUIDE_ADOCDEPENDS}
 	a2x -D $@.tmp -f epub --asciidoc-opts="${PVE_DOCBOOK_CONF}" pve-admin-guide.adoc
 	mv $@.tmp/$@ $@
 
-api-viewer/apidata.js: extractapi.pl
+api-viewer/apidata.json: extractapi.pl
 	./extractapi.pl >$@
+
+api-viewer/apidata.js: api-viewer/apidata.json
+	echo -n "const apiSchema = " > api-viewer/apidata.js
+	cat api-viewer/apidata.json | head -c-1 >> api-viewer/apidata.js
+	echo ";" >> api-viewer/apidata.js
 
 api-viewer/apidoc.js: ${API_VIEWER_FILES}
 	cat ${API_VIEWER_FILES} >$@.tmp
@@ -236,18 +241,18 @@ update:
 .PHONY: update-static
 update-static:
 	make clean-static
-	make $(filter %-synopsis.adoc %-opts.adoc, ${PVE_ADMIN_GUIDE_ADOCDEPENDS}) pve-firewall-macros.adoc api-viewer/apidata.js
+	make $(filter %-synopsis.adoc %-opts.adoc, ${PVE_ADMIN_GUIDE_ADOCDEPENDS}) pve-firewall-macros.adoc api-viewer/apidata.json
 
 .PHONY: clean-static
 clean-static:
 	find . -regex '.*-\(opts\|synopsis\)\.adoc' -not -name pmxcfs.8-synopsis.adoc -not -name qmeventd.8-synopsis.adoc -exec rm -f \{\} \;
-	rm -f api-viewer/apidata.js
+	rm -f api-viewer/apidata.json
 	rm -f pve-firewall-macros.adoc pct-network-opts.adoc pct-mountpoint-opts.adoc
 
 clean:
 	rm -rf *.html *.pdf *.epub *.tmp *.1 *.5 *.8
 	rm -f *.deb *.changes *.buildinfo
-	rm -f api-viewer/apidoc.js chapter-*.html *-plain.html chapter-*.html pve-admin-guide.chunked asciidoc-pve link-refs.json .asciidoc-pve-tmp_* pve-docs-mediawiki-import
+	rm -f api-viewer/apidoc.js api-viewer/apidata.js chapter-*.html *-plain.html chapter-*.html pve-admin-guide.chunked asciidoc-pve link-refs.json .asciidoc-pve-tmp_* pve-docs-mediawiki-import
 	rm -rf .pve-doc-depends
 	rm -f pve-doc-generator.mk chapter-index-table.adoc man1-index-table.adoc man5-index-table.adoc man8-index-table.adoc pve-admin-guide-docinfo.xml
 	rm -rf build
